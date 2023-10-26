@@ -1,0 +1,65 @@
+services:
+  frontend:
+    container_name: employee_dashboard_web_prod
+    restart: unless-stopped
+    build:
+      context: ./employee-dashboard-web
+      dockerfile: prod.dockerfile
+    ports:
+      - '3025:80'
+    expose:
+      - '80'
+    depends_on:
+      - backend
+    stdin_open: true
+    tty: true
+
+  backend:
+    container_name: employee_dashboard_backend
+    restart: unless-stopped
+    env_file:
+      - ./.env
+    depends_on:
+      - db
+    build:
+      context: ./employee-dashboard-backend
+      dockerfile: Dockerfile
+      target: base
+    ports:
+      - '${PORT}:${PORT}'
+    expose:
+      - '${PORT}'
+
+  db:
+    image: postgres:15
+    container_name: employee_dashboard_db
+    env_file:
+      - ./.env
+    volumes:
+      - database_data:/var/lib/postgresql/data
+    ports:
+      - '${DB_PORT}:${DB_PORT}'
+    expose:
+      - '${DB_PORT}'
+
+  # pgadmin for managing postgres db (runs at http://localhost:5059/)
+  # To add the above postgres server to pgadmin, use hostname as defined above: 'employee_dashboard_db'
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: pg_admin_4
+    depends_on:
+      - db
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=natalie@cyberiny.com
+      - PGADMIN_DEFAULT_PASSWORD=12345
+      - PGADMIN_LISTEN_PORT=5050
+    volumes:
+      - pg_admin_data:/root/.pgadmin
+    ports:
+      - '5059:5050'
+
+volumes:
+  database_data:
+  pg_admin_data:
+  caddy_data:
+  caddy_config:
